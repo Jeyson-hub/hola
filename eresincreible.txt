@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CÓDIGO AZUL: Protocolo de Emergencia para la Futura Dra. Madeleine 🩺</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['"Share Tech Mono"', 'monospace'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            script: ['Caveat', 'cursive'],
+          },
+          colors: {
+            med: {
+              screen: '#051811',
+              grid: '#0C2D1F',
+              ecg: '#2DF89F',
+              ecgDim: '#137549',
+              alert: '#FF4757',
+              warning: '#FFA502',
+              bgLight: '#F3F8F6',
+              card: '#FFFFFF',
+              cyan: '#00D2D3',
+              slate: '#1E293B',
+              border: '#E2E8F0'
+            }
+          },
+          boxShadow: {
+            'glow-ecg': '0 0 20px rgba(45, 248, 159, 0.45)',
+            'glow-alert': '0 0 25px rgba(255, 71, 87, 0.45)',
+            'paper': '0 12px 35px -8px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.05)',
+            'capsule': '0 10px 25px -5px rgba(0, 210, 211, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Cuadrícula clínica del monitor */
+    .ecg-grid {
+      background-size: 20px 20px;
+      background-image: 
+        linear-gradient(to right, rgba(45, 248, 159, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(45, 248, 159, 0.08) 1px, transparent 1px);
+    }
+
+    /* Animación de alerta */
+    @keyframes alertPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.98); }
+    }
+    .animate-alert {
+      animation: alertPulse 1.1s infinite ease-in-out;
+    }
+
+    /* Flash del desfibrilador */
+    @keyframes zapFlash {
+      0% { opacity: 0; }
+      15% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .flash-overlay {
+      animation: zapFlash 0.75s ease-out forwards;
+    }
+
+    /* Sacudida al desfibrilar */
+    @keyframes screenJolt {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-8px, 6px); }
+      40% { transform: translate(7px, -5px); }
+      60% { transform: translate(-4px, -3px); }
+      80% { transform: translate(4px, 3px); }
+      100% { transform: translate(0, 0); }
+    }
+    .shock-jolt {
+      animation: screenJolt 0.5s ease-in-out;
+    }
+
+    /* Cápsulas 3D Interactivas */
+    .capsule-pill {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .capsule-pill:hover {
+      transform: translateY(-8px) scale(1.03);
+    }
+
+    /* Textura de prescripción médica */
+    .rx-paper {
+      background-image: radial-gradient(#CBD5E1 0.75px, transparent 0.75px);
+      background-size: 16px 16px;
+    }
+
+    /* Sello médico con rotación */
+    .stamp-approved {
+      border: 3px double #00B894;
+      color: #00B894;
+      transform: rotate(-10deg);
+      mask-image: radial-gradient(circle, black 70%, rgba(0,0,0,0.7) 100%);
+    }
+  </style>
+</head>
+
+<body class="bg-[#EFF5F2] text-med-slate min-h-screen flex flex-col font-sans antialiased selection:bg-med-ecg selection:text-med-screen">
+
+  <!-- OVERLAY DE DESTELLO PARA DESFIBRILADOR -->
+  <div id="flashScreen" class="fixed inset-0 bg-white pointer-events-none z-50 opacity-0"></div>
+
+  <!-- HEADER CLÍNICO -->
+  <header class="w-full max-w-4xl mx-auto px-4 pt-5 pb-3 flex items-center justify-between">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-8 h-8 rounded-lg bg-med-cyan/15 flex items-center justify-center text-med-cyan text-lg font-bold border border-med-cyan/30">
+        🩺
+      </div>
+      <div>
+        <h1 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500 font-mono">Unidad de Soporte a Distancia</h1>
+        <p class="text-xs font-semibold text-slate-800">Servicio de Urgencias Emocionales</p>
+      </div>
+    </div>
+
+    <!-- Toggle de sonido -->
+    <button id="soundToggle" class="flex items-center space-x-1.5 bg-white border border-slate-200 hover:border-slate-300 px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold shadow-sm transition active:scale-95">
+      <span id="soundIcon">🔊</span>
+      <span id="soundLabel">Monitor: ACTIVO</span>
+    </button>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="w-full max-w-4xl mx-auto px-4 py-3 flex-grow space-y-6">
+
+    <!-- SECCIÓN 1: MONITOR ECG Y TRIAGE DE ADMISIÓN -->
+    <section id="monitorSection" class="bg-med-screen rounded-3xl border-4 border-slate-800 shadow-2xl overflow-hidden transition-all duration-500">
+      
+      <!-- Barra de estado del Monitor -->
+      <div class="bg-slate-900/90 border-b border-emerald-900/40 px-5 py-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+        <div class="flex items-center space-x-3 text-slate-400">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-med-alert animate-ping"></span>
+          <span class="text-slate-200 font-bold">EXPEDIENTE: #MADE-URG-01</span>
+          <span class="hidden sm:inline text-slate-500">|</span>
+          <span class="text-med-cyan hidden sm:inline">DERIVACIÓN II</span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-1">
+            <span class="text-slate-400">PULSO:</span>
+            <span id="bpmDisplay" class="text-med-alert font-bold text-base tracking-wider">34 BPM</span>
+          </div>
+          <div class="flex items-center space-x-1">
+            <span class="text-slate-400">BATERÍA:</span>
+            <span id="batteryDisplay" class="text-med-alert font-bold">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pantalla Canvas del ECG -->
+      <div class="relative w-full h-44 sm:h-52 ecg-grid overflow-hidden flex items-center justify-center">
+        <canvas id="ecgCanvas" class="w-full h-full block"></canvas>
+
+        <!-- Indicador de señal débil -->
+        <div id="traceStatusBadge" class="absolute top-3 left-4 bg-red-950/80 border border-red-500/40 px-3 py-1 rounded-md text-[11px] font-mono text-red-400 font-semibold tracking-wide flex items-center space-x-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <span>ACTIVIDAD CARDIACA ANÉMICA</span>
+        </div>
+      </div>
+
+      <!-- Ficha de Triage y Desfibrilador -->
+      <div class="bg-[#081F17] p-5 sm:p-7 border-t border-emerald-900/50">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+          
+          <!-- Datos clínicos del paciente -->
+          <div class="md:col-span-7 space-y-2.5 font-mono text-xs sm:text-sm">
+            <div class="flex items-center space-x-2">
+              <span class="text-emerald-500/80 uppercase font-bold text-[11px]">Paciente:</span>
+              <span class="text-white font-bold text-base sm:text-lg">Futura Dra. Madeleine ("Made")</span>
+            </div>
+            
+            <div class="text-slate-300">
+              <span class="text-emerald-500/80 text-[11px] uppercase font-bold block mb-0.5">Diagnóstico Presuntivo:</span>
+              <p class="leading-relaxed bg-black/40 p-2.5 rounded-xl border border-emerald-900/40 text-emerald-200/90 text-xs sm:text-[13px]">
+                Sobredosis aguda de un día gris, fatiga extrema por medicina y agotamiento severo. Requiere intervención no invasiva de afecto prioritario.
+              </p>
+            </div>
+
+            <!-- Banner Alerta Parpadeante -->
+            <div id="alertBanner" class="bg-red-500/20 border-2 border-red-500/60 rounded-xl p-2.5 flex items-center space-x-2.5 animate-alert shadow-glow-alert">
+              <span class="text-xl">🚨</span>
+              <span class="text-red-300 font-bold text-xs tracking-tight uppercase">
+                ¡COLAPSO ANÍMICO DETECTADO! SE REQUIERE INTERVENCIÓN INMEDIATA
+              </span>
+            </div>
+          </div>
+
+          <!-- Botón de Desfibrilador -->
+          <div class="md:col-span-5 flex flex-col items-center justify-center pt-2 md:pt-0">
+            <div class="relative w-full">
+              <!-- Palas del desfibrilador decorativas -->
+              <div class="flex justify-center space-x-3 mb-3 text-2xl opacity-90">
+                <span class="animate-bounce">⚡</span>
+                <span class="text-3xl">🫀</span>
+                <span class="animate-bounce" style="animation-delay: 0.2s">⚡</span>
+              </div>
+
+              <button id="defibBtn" class="w-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 hover:from-red-500 hover:to-rose-600 text-white font-mono font-bold text-sm sm:text-base py-4 px-6 rounded-2xl border-2 border-red-300 shadow-glow-alert active:scale-95 transition-all duration-150 flex flex-col items-center justify-center space-y-1">
+                <span class="tracking-wider text-base sm:text-lg">⚡ ¡DESPEJEN! ⚡</span>
+                <span class="text-[11px] font-normal opacity-90 text-red-100">(Reanimación no autorizada pero urgente)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: SALA DE RECUPERACIÓN (Se revela tras la desfibrilación) -->
+    <div id="recoveryRoom" class="hidden space-y-6 transition-all duration-700">
+
+      <!-- Notificación de Paciente Estabilizada -->
+      <div class="bg-emerald-500/10 border-2 border-emerald-500/40 rounded-2xl p-4 flex items-center justify-between text-emerald-800">
+        <div class="flex items-center space-x-3">
+          <span class="text-3xl">🩵</span>
+          <div>
+            <h2 class="font-bold text-sm sm:text-base text-emerald-950 font-mono">¡PACIENTE REANIMADA CON ÉXITO!</h2>
+            <p class="text-xs sm:text-sm text-emerald-700">Ritmo cardiaco estabilizado. Pasando a Cuidados Intensivos de Mimos a Distancia.</p>
+          </div>
+        </div>
+        <span class="text-xs font-mono font-bold bg-emerald-200/80 text-emerald-900 px-3 py-1 rounded-full hidden sm:inline-block">ESTABLE</span>
+      </div>
+
+      <!-- BOTIQUÍN CLÍNICO: 3 CÁPSULAS INTERACTIVAS -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-paper relative">
+        <div class="text-center max-w-lg mx-auto mb-6">
+          <span class="text-xs font-mono font-bold text-med-cyan bg-cyan-50 border border-cyan-200 px-3 py-1 rounded-full uppercase tracking-wider">
+            Farmacología Afectiva
+          </span>
+          <h3 class="text-xl sm:text-2xl font-bold text-slate-800 mt-2">Botiquín de Recuperación para Made</h3>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Haz clic sobre cada cápsula para ingerir su compuesto activo:
+          </p>
+        </div>
+
+        <!-- Grid de Cápsulas -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+          <!-- CÁPSULA 1 -->
+          <div onclick="openCapsule(1)" class="capsule-pill cursor-pointer bg-slate-50 hover:bg-white border-2 border-slate-200 hover:border-cyan-400 rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-between min-h-[220px]">
+            <div class="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center text-3xl mb-3 shadow-inner">
+              🧠💤
+            </div>
+            <div>
+              <span class="text-[11px] font-mono font-bold text-cyan-700 uppercase bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200">Dosis Alta</span>
+              <h4 class="font-bold text-slate-800 text-sm sm:text-base mt-2">Desconexión Neural (1000mg)</h4>
+              <p class="text-xs text-slate-500 mt-1">Tocar para abrir cápsula</p>
+            </div>
+            <div id="pillStatus1" class="text-[11px] font-mono text-cyan-600 font-semibold mt-3">
+              [ Sellada ]
+            </div>
+          </div>
+
+          <!-- CÁPSULA 2 -->
+          <div onclick="openCapsule(2)" class="capsule-pill cursor-pointer bg-slate-50 hover:bg-white border-2 border-slate-200 hover:border-emerald-400 rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-between min-h-[220px]">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-3xl mb-3 shadow-inner">
+              💉✨
+            </div>
+            <div>
+              <span class="text-[11px] font-mono font-bold text-emerald-700 uppercase bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">Vía Directa</span>
+              <h4 class="font-bold text-slate-800 text-sm sm:text-base mt-2">Inyección de Mérito Puro</h4>
+              <p class="text-xs text-slate-500 mt-1">Tocar para inyectar</p>
+            </div>
+            <div id="pillStatus2" class="text-[11px] font-mono text-emerald-600 font-semibold mt-3">
+              [ Sellada ]
+            </div>
+          </div>
+
+          <!-- CÁPSULA 3: Dosis de Luz en los Ojos -->
+          <div onclick="openCapsule(3)" class="capsule-pill cursor-pointer bg-slate-50 hover:bg-white border-2 border-rose-200 hover:border-rose-400 rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-between min-h-[220px]">
+            <div class="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center text-3xl mb-3 shadow-inner">
+              👁️💖
+            </div>
+            <div>
+              <span class="text-[11px] font-mono font-bold text-rose-700 uppercase bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">Fórmula Especial</span>
+              <h4 class="font-bold text-slate-800 text-sm sm:text-base mt-2">Dosis de Luz en los Ojos</h4>
+              <p class="text-xs text-slate-500 mt-1">Tocar para liberar brillo</p>
+            </div>
+            <div id="pillStatus3" class="text-[11px] font-mono text-rose-600 font-semibold mt-3">
+              [ Sellada ]
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Modal / Revelación de Cápsula Abierta -->
+        <div id="capsuleRevealCard" class="hidden mt-6 bg-slate-900 text-white rounded-2xl p-5 sm:p-6 border-2 border-cyan-400 shadow-xl transition-all">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+            <span id="revealTag" class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider"></span>
+            <span class="text-xs text-slate-400 font-mono">ASIMILACIÓN INMEDIATA</span>
+          </div>
+          <p id="revealBody" class="text-sm sm:text-base leading-relaxed text-slate-200 font-medium"></p>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 3: RECETA Y ORDEN OFICIAL DE ALTA MÉDICA -->
+      <section class="rx-paper bg-white border-4 border-slate-300 rounded-3xl p-6 sm:p-10 shadow-paper relative overflow-hidden">
+        
+        <!-- Sello de Agua / Esculapio sutil de fondo -->
+        <div class="absolute -right-8 -bottom-8 text-9xl text-slate-100 pointer-events-none select-none opacity-80 font-serif">
+          ⚕️
+        </div>
+
+        <!-- Membrete de la Receta -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b-2 border-slate-200 pb-4 mb-6 gap-3">
+          <div>
+            <div class="text-2xl font-bold tracking-tight text-slate-900 flex items-center space-x-2">
+              <span>HOSPITAL GENERAL DE EMERGENCIAS EMOCIONALES</span>
+            </div>
+            <p class="text-xs font-mono text-slate-500 mt-0.5">Departamento de Apoyo a Estudiantes de Medicina • Unidad Transfronteriza</p>
+          </div>
+          <div class="stamp-approved font-mono font-extrabold text-sm sm:text-base px-3.5 py-1.5 rounded-lg text-center uppercase tracking-wider">
+            ✓ ALTA APROBADA
+          </div>
+        </div>
+
+        <!-- Datos del paciente -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-mono">
+          <div>
+            <span class="text-slate-400 block">PACIENTE:</span>
+            <span class="font-bold text-slate-800 text-sm">Futura Dra. Madeleine (Made)</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">DIAGNÓSTICO:</span>
+            <span class="font-bold text-emerald-700">Crisis superada con valentía</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">PRONÓSTICO:</span>
+            <span class="font-bold text-cyan-700">Excelente y brillante</span>
+          </div>
+        </div>
+
+        <!-- Rp / Prescripción médica -->
+        <div class="space-y-4 mb-8">
+          <div class="flex items-center space-x-2 text-slate-900 font-bold font-mono text-lg">
+            <span>℞</span>
+            <span class="text-sm uppercase tracking-wider text-slate-600">Prescripción de Cumplimiento Obligatorio:</span>
+          </div>
+
+          <ol class="space-y-3.5 text-sm sm:text-base text-slate-700 list-decimal list-inside font-medium leading-relaxed">
+            <li class="pl-2">
+              <strong class="text-slate-900">Cero apuntes, libros o guías clínicas por lo que queda del día.</strong> El cerebro de la futura doctora entra en estado de hibernación oficial. Mañana habrá tiempo para todo lo demás.
+            </li>
+            <li class="pl-2">
+              <strong class="text-slate-900">Pijama extra suave y comida rica sin remordimientos.</strong> Prohibido contar calorías o juzgar cualquier antojo que reconforte el corazón hoy.
+            </li>
+            <li class="pl-2">
+              <strong class="text-slate-900">Recordar siempre que la distancia es solo geográfica.</strong> Aunque haya kilómetros y fronteras de por medio, cuentas con alguien que te admira con locura y está a solo un mensaje de distancia.
+            </li>
+          </ol>
+        </div>
+
+        <!-- Firma del enfermero improvisado -->
+        <div class="pt-6 border-t-2 border-dashed border-slate-200 flex flex-col sm:flex-row justify-between items-end gap-6">
+          <div class="text-xs text-slate-400 font-mono">
+            <span>REGISTRO: #AMOR-A-DISTANCIA-24/7</span><br>
+            <span>VÁLIDO EN CUALQUIER PAÍS DEL PLANETA</span>
+          </div>
+
+          <div class="text-center sm:text-right">
+            <!-- Firma manuscrita -->
+            <div class="font-script text-2xl sm:text-3xl text-slate-800 mb-1 -rotate-3 select-none">
+              Tu enfermero a distancia
+            </div>
+            <div class="w-48 h-0.5 bg-slate-400 ml-auto mb-1"></div>
+            <p class="text-[11px] font-mono text-slate-600 font-bold">
+              Tu enfermero/camillero improvisado a distancia
+            </p>
+            <p class="text-[10px] font-mono text-slate-400">
+              (Con 0% de licencia médica oficial, pero 100% de dedicación)
+            </p>
+          </div>
+        </div>
+
+        <!-- Botón de Celebración con Confeti -->
+        <div class="mt-8 text-center">
+          <button id="confettiBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-mono font-bold text-sm sm:text-base py-3 px-8 rounded-2xl shadow-lg shadow-emerald-500/25 active:scale-95 transition-all inline-flex items-center space-x-2">
+            <span>🎉</span>
+            <span>¡Celebrar Alta Médica de Made!</span>
+            <span>✨</span>
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="w-full text-center py-5 text-xs text-slate-400 font-mono">
+    CÓDIGO AZUL RESOLVIDO • HECHO CON MUCHO CARIÑO PARA TI 🩺🤍
+  </footer>
+
+  <!-- SCRIPT CON AUDIO SYNTH, CANVAS ECG Y LÓGICA CLÍNICA -->
+  <script>
+    // ==========================================
+    // 1. SINTETIZADOR DE AUDIO (Web Audio API)
+    // ==========================================
+    let audioCtx = null;
+    let isSoundOn = true;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Toggle de sonido
+    const soundToggle = document.getElementById('soundToggle');
+    const soundIcon = document.getElementById('soundIcon');
+    const soundLabel = document.getElementById('soundLabel');
+
+    soundToggle.addEventListener('click', () => {
+      isSoundOn = !isSoundOn;
+      soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
+      soundLabel.textContent = isSoundOn ? 'Monitor: ACTIVO' : 'Monitor: MUTED';
+    });
+
+    // Beep médico del monitor cardíaco
+    function playBeep(pitch = 750, duration = 0.08) {
+      if (!isSoundOn) return;
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(pitch, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration + 0.01);
+      } catch (e) {}
+    }
+
+    // Carga eléctrica y ZAP de Desfibrilador
+    function playDefibZap() {
+      if (!isSoundOn) return;
+      try {
+        const ctx = getAudioCtx();
+        
+        // 1. Tono de carga ascendente
+        const oscCharge = ctx.createOscillator();
+        const gainCharge = ctx.createGain();
+        oscCharge.type = 'sawtooth';
+        oscCharge.frequency.setValueAtTime(220, ctx.currentTime);
+        oscCharge.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.8);
+        gainCharge.gain.setValueAtTime(0.01, ctx.currentTime);
+        gainCharge.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.7);
+        gainCharge.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.85);
+        oscCharge.connect(gainCharge);
+        gainCharge.connect(ctx.destination);
+        oscCharge.start();
+        oscCharge.stop(ctx.currentTime + 0.85);
+
+        // 2. Descarga / ZAP estruendoso
+        setTimeout(() => {
+          const oscZap = ctx.createOscillator();
+          const gainZap = ctx.createGain();
+          oscZap.type = 'square';
+          oscZap.frequency.setValueAtTime(120, ctx.currentTime);
+          oscZap.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.35);
+
+          gainZap.gain.setValueAtTime(0.4, ctx.currentTime);
+          gainZap.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+          oscZap.connect(gainZap);
+          gainZap.connect(ctx.destination);
+          oscZap.start();
+          oscZap.stop(ctx.currentTime + 0.36);
+        }, 800);
+      } catch (e) {}
+    }
+
+    // Clic sutil de pastilla / cápsula
+    function playPillSound() {
+      if (!isSoundOn) return;
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.07);
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // 2. MONITOR ECG EN CANVAS (DINÁMICO)
+    // ==========================================
+    const canvas = document.getElementById('ecgCanvas');
+    const ctx = canvas.getContext('2d');
+    const bpmDisplay = document.getElementById('bpmDisplay');
+    const batteryDisplay = document.getElementById('batteryDisplay');
+
+    let isRevived = false;
+    let animFrameId = null;
+
+    // Buffer de puntos para el barrido del osciloscopio
+    let width = 0;
+    let height = 0;
+    let scanX = 0;
+    let lastY = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      width = canvas.width = rect.width;
+      height = canvas.height = rect.height;
+      lastY = height / 2;
+      ctx.fillStyle = '#051811';
+      ctx.fillRect(0, 0, width, height);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let beatCounter = 0;
+
+    function drawECG() {
+      // Borrar una franja delante del haz de luz (efecto fósforo de monitor)
+      const clearWidth = 14;
+      ctx.fillStyle = '#051811';
+      ctx.fillRect(scanX, 0, clearWidth, height);
+
+      let currentY = height / 2;
+      beatCounter++;
+
+      // ECG lento o reactivado
+      const cycleLength = isRevived ? 40 : 110;
+      const progress = beatCounter % cycleLength;
+
+      if (!isRevived) {
+        // Trazado lento y débil
+        if (progress === 10) {
+          currentY = height / 2 - 12; // Pequeña onda P
+        } else if (progress === 15) {
+          currentY = height / 2 + 8; // Onda Q
+        } else if (progress === 18) {
+          currentY = height / 2 - 35; // Onda R baja
+          playBeep(480, 0.09); // Beep lento y grave
+        } else if (progress === 21) {
+          currentY = height / 2 + 12; // Onda S
+        } else if (progress === 30) {
+          currentY = height / 2 - 10; // Onda T tímida
+        } else {
+          // Línea casi plana con leve ruido
+          currentY = height / 2 + (Math.random() * 2 - 1);
+        }
+      } else {
+        // Trazado enérgico, juvenil y vivaz
+        if (progress === 6) {
+          currentY = height / 2 - 18; // Onda P sana
+        } else if (progress === 9) {
+          currentY = height / 2 + 14; // Q
+        } else if (progress === 12) {
+          currentY = height / 2 - 65; // Onda R alta y fuerte
+          playBeep(880, 0.07); // Beep alegre y claro
+        } else if (progress === 15) {
+          currentY = height / 2 + 25; // S
+        } else if (progress === 22) {
+          currentY = height / 2 - 24; // Onda T plena
+        } else {
+          currentY = height / 2 + (Math.random() * 2 - 1);
+        }
+      }
+
+      // Dibujar línea del ECG
+      ctx.beginPath();
+      ctx.moveTo(scanX - 2 < 0 ? 0 : scanX - 2, lastY);
+      ctx.lineTo(scanX, currentY);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = isRevived ? '#2DF89F' : '#FF4757';
+      ctx.shadowBlur = isRevived ? 12 : 6;
+      ctx.shadowColor = isRevived ? '#2DF89F' : '#FF4757';
+      ctx.stroke();
+
+      lastY = currentY;
+      scanX += 3;
+      if (scanX > width) {
+        scanX = 0;
+      }
+
+      animFrameId = requestAnimationFrame(drawECG);
+    }
+    drawECG();
+
+    // ==========================================
+    // 3. DESFIBRILADOR Y REANIMACIÓN DRAMÁTICA
+    // ==========================================
+    const defibBtn = document.getElementById('defibBtn');
+    const flashScreen = document.getElementById('flashScreen');
+    const monitorSection = document.getElementById('monitorSection');
+    const alertBanner = document.getElementById('alertBanner');
+    const traceStatusBadge = document.getElementById('traceStatusBadge');
+    const recoveryRoom = document.getElementById('recoveryRoom');
+
+    defibBtn.addEventListener('click', () => {
+      defibBtn.disabled = true;
+      defibBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+      // 1. Sonido de carga y zap
+      playDefibZap();
+
+      // 2. Destello y sacudida tras 800ms
+      setTimeout(() => {
+        flashScreen.classList.add('flash-overlay');
+        monitorSection.classList.add('shock-jolt');
+
+        // Confeti de corazones y chispas
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 80,
+            spread: 90,
+            origin: { y: 0.4 },
+            colors: ['#2DF89F', '#00D2D3', '#FF758F', '#FFDE59']
+          });
+        }
+
+        // 3. Actualizar monitor a estado vital
+        isRevived = true;
+        bpmDisplay.textContent = '84 BPM';
+        bpmDisplay.className = 'text-med-ecg font-bold text-base tracking-wider';
+        batteryDisplay.textContent = '100% ✨';
+        batteryDisplay.className = 'text-med-ecg font-bold';
+
+        traceStatusBadge.className = 'absolute top-3 left-4 bg-emerald-950/80 border border-emerald-500/40 px-3 py-1 rounded-md text-[11px] font-mono text-emerald-300 font-semibold tracking-wide flex items-center space-x-1.5';
+        traceStatusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>RITMO SINUSAL SALUDABLE • RESCATE EXITOSO</span>`;
+
+        alertBanner.className = 'bg-emerald-500/20 border-2 border-emerald-500/60 rounded-xl p-2.5 flex items-center space-x-2.5 text-emerald-300 font-bold text-xs font-mono';
+        alertBanner.innerHTML = `<span>🩺</span><span>¡ESTADO CRÍTICO SUPERADO! PACIENTE LISTA PARA ALTA</span>`;
+
+        // 4. Revelar la Sala de Recuperación y hacer scroll suave
+        setTimeout(() => {
+          flashScreen.classList.remove('flash-overlay');
+          monitorSection.classList.remove('shock-jolt');
+          recoveryRoom.classList.remove('hidden');
+          recoveryRoom.scrollIntoView({ behavior: 'smooth' });
+        }, 600);
+
+      }, 800);
+    });
+
+    // ==========================================
+    // 4. INTERACCIÓN DE CÁPSULAS DEL BOTIQUÍN
+    // ==========================================
+    const capsulesData = {
+      1: {
+        tag: 'Cápsula 1: Desconexión Neural (1000mg)',
+        body: 'Indicación: Prohibido sobrepensar lo que pasó hoy. Como futura doctora sabes bien que con la cabeza exhausta todo se ve peor; hoy se cuelga el estetoscopio y no se atiende a nadie más.',
+        color: '#00D2D3'
+      },
+      2: {
+        tag: 'Cápsula 2: Inyección de Mérito Puro',
+        body: 'Composición: Una dosis concentrada de realidad. Estudiar medicina es una locura de pesada, pero un mal día no borra ni un milímetro de lo inteligente, capaz y maravillosa que eres.',
+        color: '#2DF89F'
+      },
+      3: {
+        tag: 'Cápsula 3: Dosis de Luz en los Ojos ✨',
+        body: 'Eres una persona increíble y maravillosa. No dejes que nada ni nadie apague ese brillo tan bonito que tienes en los ojos. Sonríe, porque tienes una sonrisa hermosa que le alegra el día hasta al más bajoneado (y lo confirmo yo).',
+        color: '#FF758F'
+      }
+    };
+
+    const capsuleRevealCard = document.getElementById('capsuleRevealCard');
+    const revealTag = document.getElementById('revealTag');
+    const revealBody = document.getElementById('revealBody');
+
+    function openCapsule(num) {
+      playPillSound();
+      const cap = capsulesData[num];
+
+      // Efecto confeti suave
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 25,
+          spread: 40,
+          origin: { y: 0.65 }
+        });
+      }
+
+      // Marcar estatus como administrada
+      const statusElement = document.getElementById(`pillStatus${num}`);
+      if (statusElement) {
+        statusElement.textContent = '✓ Administrada';
+        statusElement.className = 'text-[11px] font-mono font-bold text-slate-800 mt-3';
+      }
+
+      // Mostrar contenido
+      revealTag.textContent = cap.tag;
+      revealTag.style.color = cap.color;
+      revealBody.textContent = `"${cap.body}"`;
+
+      capsuleRevealCard.classList.remove('hidden');
+      capsuleRevealCard.style.borderColor = cap.color;
+      capsuleRevealCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ==========================================
+    // 5. CELEBRACIÓN DE ALTA CON CONFETI
+    // ==========================================
+    document.getElementById('confettiBtn').addEventListener('click', () => {
+      playBeep(980, 0.12);
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 130,
+          spread: 100,
+          origin: { y: 0.8 },
+          colors: ['#2DF89F', '#00D2D3', '#FF4757', '#FFDE59', '#C8B6FF']
+        });
+      }
+    });
+  </script>
+</body>
+</html>
